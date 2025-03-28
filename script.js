@@ -170,7 +170,7 @@ const secretPharses = [
 ]
 
 // Create text texture
-const text = Math.random() > 0.5 ? secretPharses[Math.floor(Math.random() * secretPharses.length)] : 'zeo.lol';
+const text = Math.random() > 0.5 ? secretPharses[Math.floor(Math.random() * secretPharses.length)] : 'zeo.lol🐱';
 const createTextTexture = () => {
     const canvas = document.createElement('canvas');
     canvas.width = CW;
@@ -231,10 +231,14 @@ const generatePointPositions = () => {
     for (let j = 0; j < CH; j++) {
         for (let i = 0; i < CW; i++) {
             const index = 4 * (j * CW + i);
-            if (data[index + 3] > 0 && data[index] > 0) {
+            // Check alpha and if the pixel is not black (since background is black)
+            if (data[index + 3] == 255 && (data[index] > 0 || data[index + 1] > 0 || data[index + 2] > 0)) {
                 const x = i - CW / 2;
                 const y = CH / 2 - j;
-                pointPositions.push({ x, y, z: 0.1 });
+                const r = data[index] / 255;
+                const g = data[index + 1] / 255;
+                const b = data[index + 2] / 255;
+                pointPositions.push({ x, y, z: 0.1, r, g, b });
             }
         }
     }
@@ -247,24 +251,29 @@ let pointPositions = generatePointPositions();
 let geometry = new THREE.BufferGeometry();
 const setupPointCloud = () => {
     const positions = new Float32Array(pointPositions.length * 3);
+    const colors = new Float32Array(pointPositions.length * 3);
     const originalPositions = new Float32Array(pointPositions.length * 3);
     for (let i = 0; i < pointPositions.length; i++) {
         positions[i * 3] = pointPositions[i].x;
         positions[i * 3 + 1] = pointPositions[i].y;
         positions[i * 3 + 2] = pointPositions[i].z;
+        colors[i * 3] = pointPositions[i].r;
+        colors[i * 3 + 1] = pointPositions[i].g;
+        colors[i * 3 + 2] = pointPositions[i].b;
         originalPositions[i * 3] = pointPositions[i].x;
         originalPositions[i * 3 + 1] = pointPositions[i].y;
         originalPositions[i * 3 + 2] = pointPositions[i].z;
     }
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geometry.setAttribute('originalPosition', new THREE.BufferAttribute(originalPositions, 3));
 };
 
 setupPointCloud();
 
 const material = new THREE.PointsMaterial({
-    size: 3,
-    color: 0xffffff,
+    size: 1,
+    vertexColors: true,
     transparent: true,
     opacity: 0,
     alphaTest: 0.001,
