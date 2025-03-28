@@ -170,7 +170,7 @@ const secretPharses = [
 ]
 
 // Create text texture
-const text = Math.random() > 0.5 ? secretPharses[Math.floor(Math.random() * secretPharses.length)] : 'zeo.lol🐱';
+const text = Math.random() > 0.8 ? secretPharses[Math.floor(Math.random() * secretPharses.length)] : 'zeo.lol🐱';
 const createTextTexture = () => {
     const canvas = document.createElement('canvas');
     canvas.width = CW;
