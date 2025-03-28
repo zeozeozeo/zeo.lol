@@ -170,7 +170,15 @@ const secretPharses = [
 ]
 
 // Create text texture
-const text = Math.random() > 0.8 ? secretPharses[Math.floor(Math.random() * secretPharses.length)] : 'zeo.lol🐱';
+var text = 'zeo.lol🐱';
+if (Math.random() > 0.5) {
+    text = secretPharses[Math.floor(Math.random() * secretPharses.length)];
+    setTimeout(() => {
+        text = 'zeo.lol🐱';
+        resizeHandler();
+    }, 5000);
+}
+
 const createTextTexture = () => {
     const canvas = document.createElement('canvas');
     canvas.width = CW;
@@ -378,8 +386,7 @@ function animate() {
 }
 animate();
 
-// Handle window resize
-window.addEventListener('resize', () => {
+const resizeHandler = () => {
     CW = window.innerWidth;
     CH = window.innerHeight;
     
@@ -416,4 +423,7 @@ window.addEventListener('resize', () => {
     geometry = new THREE.BufferGeometry();
     setupPointCloud();
     points.geometry = geometry;
-});
+}
+
+// Handle window resize
+window.addEventListener('resize', resizeHandler);
