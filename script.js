@@ -1,5 +1,138 @@
 import * as THREE from 'three';
 
+// Dynamic favicon setup
+const createFavicon = () => {
+    const size = 16;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    
+    const text = 'zeo.lol';
+    const state = {
+        scrollPos: 0,
+        baseSpeed: 1.5,
+        currentSpeed: 1.5,
+        speedMultiplier: 1,
+        hueOffset: 0,
+        frame: 0
+    };
+    
+    // Create gradient colors
+    const createGradient = (offset) => {
+        const gradient = ctx.createLinearGradient(0, 0, size, size);
+        const stops = [
+            [0, '#ff6b6b'],
+            [0.33, '#4ecdc4'],
+            [0.66, '#45b7d1'],
+            [1, '#96f'],
+        ];
+        
+        stops.forEach(([pos, color]) => {
+            const adjustedPos = (pos + (offset / 100)) % 1;
+            gradient.addColorStop(adjustedPos, color);
+        });
+        
+        return gradient;
+    };
+    
+    return {
+        setSpeedMultiplier(multiplier) {
+            state.speedMultiplier = multiplier;
+            state.currentSpeed = state.baseSpeed * multiplier;
+        },
+        
+        update() {
+            state.frame++;
+
+            // Clear canvas
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Draw gradient background
+            ctx.fillStyle = createGradient(state.hueOffset);
+            ctx.fillRect(0, 0, size, size);
+            
+            // Update gradient animation
+            state.hueOffset = (state.hueOffset + 2.5 * state.speedMultiplier) % 100;
+            
+            // Draw text
+            ctx.font = 'bold 12px monospace';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            
+            // Calculate text width for a single letter
+            const letterWidth = ctx.measureText('W').width;
+            
+            // Update and draw letters
+            for (let i = 0; i < text.length; i++) {
+                const y = (size / 2) + Math.sin(state.frame / 5 + i / 2) * 4;
+                
+                // Calculate x position with scroll
+                const totalWidth = text.length * letterWidth + size;
+                let xPos = size - (state.scrollPos % totalWidth) + (i * letterWidth);
+                
+                // Draw the letter
+                const currentChar = text[i];
+                
+                // Add text stroke for better visibility
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.strokeText(currentChar, xPos, y);
+                
+                // Draw the actual letter
+                ctx.fillStyle = '#000';
+                ctx.fillText(currentChar, xPos, y);
+                
+                // Draw the letter again when it's about to disappear
+                if (xPos + letterWidth < size) {
+                    ctx.strokeText(currentChar, xPos + totalWidth, y);
+                    ctx.fillText(currentChar, xPos + totalWidth, y);
+                }
+            }
+            
+            // Update scroll position
+            state.scrollPos += state.currentSpeed;
+            
+            // Update favicon
+            let favicon = document.getElementById('dynamic-favicon');
+            if (!favicon) {
+                favicon = document.createElement('link');
+                favicon.id = 'dynamic-favicon';
+                favicon.rel = 'icon';
+                document.head.appendChild(favicon);
+            }
+            
+            favicon.href = canvas.toDataURL('image/png');
+        }
+    };
+};
+
+const favicon = createFavicon();
+
+// Handle page visibility changes
+document.addEventListener('visibilitychange', () => {
+    favicon.setSpeedMultiplier(document.hidden ? 5 : 1);
+});
+
+// Update both favicon and title
+const titleText = 'zeo.lol';
+let titleScrollPos = 0;
+const updateAll = () => {
+    favicon.update();
+    
+    // Update title marquee
+    const visibleLength = titleText.length * 2;
+    const scrolledTitle = titleText.padEnd(visibleLength, ' ').repeat(2);
+    const startIdx = Math.floor(titleScrollPos % titleText.length);
+    const displayText = scrolledTitle.substring(startIdx, startIdx + visibleLength);
+    document.title = displayText;
+    titleScrollPos += document.hidden ? 1 : 0.3;
+};
+
+// Run the animation loop
+setInterval(updateAll, 50);
+
 // Scene setup with dynamic dimensions
 let CW = window.innerWidth;
 let CH = window.innerHeight;
@@ -22,7 +155,22 @@ const measureText = (ctx, text, fontSize, fontFamily) => {
     };
 };
 
+const secretPharses = [
+    'lol.zeo',
+    'meow',
+    '🐱',
+    '🐶',
+    '🐕',
+    '🐈',
+    'owo.whats.this',
+    'rawr.xd',
+    '💀👍',
+    '👽🛸',
+    '🦖🌋',
+]
+
 // Create text texture
+const text = Math.random() > 0.5 ? secretPharses[Math.floor(Math.random() * secretPharses.length)] : 'zeo.lol';
 const createTextTexture = () => {
     const canvas = document.createElement('canvas');
     canvas.width = CW;
@@ -43,7 +191,6 @@ const createTextTexture = () => {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'white';
     
-    const text = 'zeo.lol';
     const textMetrics = measureText(ctx, text, fontSize, 'Arial');
     
     ctx.fillText(text, CW / 2, CH / 2);
@@ -133,8 +280,10 @@ scene.add(points);
 
 // Mouse handling
 const mouse = new THREE.Vector2();
-let mouseWorldX = 0;
-let mouseWorldY = 0;
+mouse.x = Infinity;
+mouse.y = Infinity;
+let mouseWorldX = Infinity;
+let mouseWorldY = Infinity;
 
 window.addEventListener('mousemove', (event) => {
     mouse.x = (event.clientX / CW) * 2 - 1;
