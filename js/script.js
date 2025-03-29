@@ -775,13 +775,14 @@ function animate() {
       }
       posArray[i * 3 + 2] = 0.1;
     }
-  } else if (resetPointsIters < 60) {
+  } else if (resetPointsIters < 30) {
     // Return to original positions when not hovering
     for (let i = 0; i < pointPositions.length; i++) {
       posArray[i * 3] += (origArray[i * 3] - posArray[i * 3]) * 0.1;
       posArray[i * 3 + 1] += (origArray[i * 3 + 1] - posArray[i * 3 + 1]) * 0.1;
       posArray[i * 3 + 2] = 0.1;
     }
+    console.log(resetPointsIters);
     resetPointsIters++;
   }
 
