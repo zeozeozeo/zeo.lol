@@ -782,7 +782,6 @@ function animate() {
       posArray[i * 3 + 1] += (origArray[i * 3 + 1] - posArray[i * 3 + 1]) * 0.1;
       posArray[i * 3 + 2] = 0.1;
     }
-    console.log(resetPointsIters);
     resetPointsIters++;
   }
 
