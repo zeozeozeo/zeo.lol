@@ -63,7 +63,7 @@ const createFavicon = () => {
 
       // Calculate text width for a single letter
       const letterWidth = ctx.measureText("W").width;
-
+ 
       // Update and draw letters
       for (let i = 0; i < text.length; i++) {
         const y = size / 2 + Math.sin(state.frame / 5 + i / 2) * 4;
@@ -727,6 +727,7 @@ updateBaseRatio();
 let R = CH * baseRatioR;
 let strength = CH * baseRatioStrength;
 let fadeValue = 1;
+let didResetPoints = false;
 
 // Animation loop
 function animate() {
@@ -751,6 +752,7 @@ function animate() {
   const origArray = geometry.attributes.originalPosition.array;
 
   if (isHovering) {
+    didResetPoints = false;
     for (let i = 0; i < pointPositions.length; i++) {
       const ox = origArray[i * 3];
       const oy = origArray[i * 3 + 1];
@@ -773,13 +775,14 @@ function animate() {
       }
       posArray[i * 3 + 2] = 0.1;
     }
-  } else {
+  } else if (!didResetPoints) {
     // Return to original positions when not hovering
     for (let i = 0; i < pointPositions.length; i++) {
       posArray[i * 3] += (origArray[i * 3] - posArray[i * 3]) * 0.1;
       posArray[i * 3 + 1] += (origArray[i * 3 + 1] - posArray[i * 3 + 1]) * 0.1;
       posArray[i * 3 + 2] = 0.1;
     }
+    didResetPoints = true;
   }
 
   geometry.attributes.position.needsUpdate = true;
