@@ -187,14 +187,20 @@ const wormSegments = 200;
 const wormRadius = 2;
 const wormLength = Math.min(CW, CH) * 0.6;
 
-// Initialize worm path with valid numbers
+// Initialize worm path
 const wormPath = new THREE.CatmullRomCurve3();
 const wormPoints = [];
+const spiralTurns = 2;
+const maxRadius = Math.min(CW, CH) * 0.1;
 for (let i = 0; i < wormSegments; i++) {
-  const t = i / wormSegments;
-  const y = (t - 0.5) * wormLength;
-  wormPoints.push(new THREE.Vector3(0, y, 0));
+  const t = i / (wormSegments - 1);
+  const angle = t * spiralTurns * 2 * Math.PI;
+  const radius = maxRadius * (1 - t);
+  const x = radius * Math.cos(angle);
+  const y = radius * Math.sin(angle);
+  wormPoints.push(new THREE.Vector3(x, y, 0));
 }
+wormPoints.reverse();
 wormPath.points = wormPoints;
 
 const wormGeometry = new THREE.TubeGeometry(
@@ -223,6 +229,8 @@ const worm = new THREE.Mesh(
   useDebugWormMaterial ? wormDebugMaterial : wormMaterial
 );
 worm.renderOrder = 0;
+let isWormVisible = false; // State variable for worm visibility
+worm.visible = isWormVisible; // Set initial visibility
 scene.add(worm);
 
 // Food system
@@ -256,6 +264,7 @@ function spawnFoodAt(x, y) {
 
   const foodMesh = new THREE.Mesh(foodGeometry, foodMaterial);
   foodMesh.position.set(clampedX, clampedY, z);
+  foodMesh.visible = isWormVisible; // Set initial visibility based on worm state
 
   foodItems.push(foodMesh);
   scene.add(foodMesh);
@@ -305,10 +314,16 @@ function eatFood(foodIndex) {
   foodItems.splice(foodIndex, 1);
   lastTimeSpawned = Date.now();
 
-  if (Math.random() > 0.5) spawnFood();
+  // Only spawn replacement food if the simulation is visible
+  if (isWormVisible && Math.random() > 0.5) spawnFood();
 }
 
-setInterval(spawnFood, foodSpawnInterval);
+// Only spawn food periodically if the simulation is visible
+setInterval(() => {
+  if (isWormVisible) {
+    spawnFood();
+  }
+}, foodSpawnInterval);
 
 // Spawn some food near the worm
 setTimeout(() => {
@@ -328,8 +343,11 @@ function updateWorm() {
   }
   if (Date.now() - lastTimeSpawned > 5000) {
     lastTimeSpawned = Date.now();
-    for (let i = 0; i < 10; i++) {
-      spawnFood(true);
+    // Only spawn recovery food if visible
+    if (isWormVisible) {
+      for (let i = 0; i < 10; i++) {
+        spawnFood(true);
+      }
     }
   }
 
@@ -559,16 +577,15 @@ const secretPharses = [
   "owo.whats.this",
   "rawr.xd",
   "💀👍",
-  "👽🛸",
-  "🦖🌋",
 ];
 
 // Create text texture
-var text = "zeo.lol🐱";
+const defaultText = detectMobile() ? "zeo.lol" : "zeo.lol🐱";
+var text = defaultText;
 if (Math.random() > 0.5) {
   text = secretPharses[Math.floor(Math.random() * secretPharses.length)];
   setTimeout(() => {
-    text = "zeo.lol🐱";
+    text = defaultText;
     resizeHandler();
   }, 5000);
 }
@@ -734,9 +751,15 @@ function animate() {
   requestAnimationFrame(animate);
 
   // Update connectome and worm
-  if (typeof BRAIN !== "undefined" && BRAIN.update) {
-    BRAIN.update();
-    updateWorm();
+  if (isWormVisible) {
+    if (typeof BRAIN !== "undefined" && BRAIN.update) {
+      BRAIN.update();
+      updateWorm();
+    }
+    if (worm && worm.geometry) {
+      worm.geometry.attributes.position.needsUpdate = true;
+      worm.geometry.computeVertexNormals();
+    }
   }
 
   // Check if mouse is within text bounds
@@ -839,3 +862,61 @@ const resizeHandler = () => {
 
 // Handle window resize
 window.addEventListener("resize", resizeHandler);
+
+// --- Worm Visibility Toggle ---
+
+function toggleWormVisibility() {
+  isWormVisible = !isWormVisible;
+  worm.visible = isWormVisible;
+  // Toggle visibility for all existing food items
+  foodItems.forEach((food) => {
+    if (food) {
+      // Check if food item exists (might have been eaten)
+      food.visible = isWormVisible;
+    }
+  });
+  console.log("Worm and food visibility toggled:", isWormVisible);
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "w" || event.key === "W") {
+    toggleWormVisibility();
+  }
+});
+
+let touchHoldTimer = null;
+const holdDuration = 5000;
+
+document.addEventListener(
+  "touchstart",
+  (event) => {
+    if (event.touches.length !== 1) return;
+    if (touchHoldTimer) clearTimeout(touchHoldTimer);
+
+    touchHoldTimer = setTimeout(() => {
+      toggleWormVisibility();
+      touchHoldTimer = null;
+    }, holdDuration);
+  },
+  { passive: true }
+);
+
+document.addEventListener("touchend", () => {
+  if (touchHoldTimer) {
+    clearTimeout(touchHoldTimer);
+    touchHoldTimer = null;
+  }
+});
+
+document.addEventListener(
+  "touchmove",
+  () => {
+    if (touchHoldTimer) {
+      clearTimeout(touchHoldTimer);
+      touchHoldTimer = null;
+    }
+  },
+  { passive: true }
+);
+
+// --- End Worm Visibility Toggle ---
