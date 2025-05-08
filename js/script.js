@@ -602,12 +602,12 @@ const createTextTexture = () => {
 
   // Calculate font size based on both width and height, with maximum limit
   const fontSize = Math.min(Math.min(CW / 6, CH / 4), 120);
-  ctx.font = `bold ${fontSize}px Arial`;
+  ctx.font = `bold ${fontSize}px "JetBrains Mono"`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "white";
 
-  const textMetrics = measureText(ctx, text, fontSize, "Arial");
+  const textMetrics = measureText(ctx, text, fontSize, "JetBrains Mono");
 
   ctx.fillText(text, CW / 2, CH / 2);
 
